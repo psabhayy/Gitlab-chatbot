@@ -1,4 +1,4 @@
-# GitLab Assistant 🦊
+# GitLab Assistant 
 
 A conversational AI assistant designed to answer questions based on the GitLab Handbook and Direction pages. This project utilizes Retrieval-Augmented Generation (RAG) to provide accurate, context-aware responses backed by live source URLs.
 
