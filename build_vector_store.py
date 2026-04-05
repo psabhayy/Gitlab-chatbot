@@ -1,0 +1,98 @@
+import os
+import shutil
+import subprocess
+import requests
+from bs4 import BeautifulSoup
+import chromadb
+chromadb.config.Settings(anonymized_telemetry=False) 
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from src.data_loader import load_documents
+from src.config import EMBEDDING_MODEL_NAME, DIRECTION_PAGE_URLS
+
+def update_handbook():
+    """Updates or clones the local GitLab handbook."""
+    os.makedirs("data", exist_ok=True)
+    handbook_dir = "data/handbook"
+    
+    if os.path.exists(handbook_dir):
+        print(f"🔄 Fetching latest updates in {handbook_dir}...")
+        subprocess.run(["git", "-C", handbook_dir, "pull"], check=False)
+    else:
+        print(f"🔄 Cloning {handbook_dir} repository (this takes a few minutes)...")
+        subprocess.run(
+            ["git", "clone", "https://gitlab.com/gitlab-com/content-sites/handbook.git", handbook_dir],
+            check=True
+        )
+
+def update_direction_pages():
+    """Automatically scrapes Direction pages and saves them locally to bypass Cloudflare."""
+    direction_path = "data/direction"
+    os.makedirs(direction_path, exist_ok=True)
+    
+    print("\n🌐 Downloading Direction pages automatically...")
+    
+    # We spoof a real browser to get past GitLab's bot protection
+    headers = {
+        # This spoofed User-Agent works as a workaround to bypass GitLab's Cloudflare bot protection
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    for url in DIRECTION_PAGE_URLS:
+        try:
+            response = requests.get(url, headers=headers, timeout=15)
+            if response.status_code == 200:
+                # Convert messy HTML into clean text
+                soup = BeautifulSoup(response.text, "html.parser")
+                text_content = soup.get_text(separator="\n", strip=True)
+                
+                # Create a smart filename based on the URL
+                filename = url.strip("/").split("/")[-1]
+                if not filename or filename == "direction":
+                    filename = "main_direction"
+                filepath = os.path.join(direction_path, f"{filename}.md")
+                
+                # Save it to the local hard drive
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write(f"Source URL: {url}\n\n")
+                    f.write(text_content)
+                print(f"   ✅ Successfully Saved: {filename}.md")
+            else:
+                print(f"   ⚠️ Blocked by GitLab (Status {response.status_code}): {url}")
+        except Exception as e:
+            print(f"   ⚠️ Error fetching {url}: {e}")
+
+def main():
+    """Main sequence to update data, chunk, and build Chroma DB."""
+    print("🚀 Starting Automated Data Pipeline...\n")
+    
+    # 1. Automate Data Fetching for BOTH sources
+    update_handbook()
+    update_direction_pages()
+    
+    # 2. Extract and chunk data from our local folders
+    print("\n📄 Loading documents into memory...")
+    chunks = load_documents()
+    
+    if not chunks:
+        print("❌ No chunks generated. Exiting database build.")
+        return
+        
+    db_path = "vector_db"
+    
+    # 3. Clean up the old DB fully to prevent any duplicates
+    if os.path.exists(db_path):
+        print(f"\n🗑️ Removing old vector database at {db_path}...")
+        shutil.rmtree(db_path)
+        
+    print(f"🧠 Initializing embedding model: {EMBEDDING_MODEL_NAME}...")
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    
+    print(f"💾 Building new local Chroma vector database...")
+    # 4. Create local database from chunks using chosen embeddings
+    Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=db_path)
+    
+    print("🎉 Success: Vector database created locally. You can now run the app.\n")
+
+if __name__ == "__main__":
+    main()
