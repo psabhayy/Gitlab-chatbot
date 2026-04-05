@@ -4,26 +4,7 @@ A conversational AI assistant designed to answer questions based on the GitLab H
 
 ## System Architecture
 
-```mermaid
-graph TD
-    A[User] -->|Asks Question| B(Streamlit UI)
-    B --> C{RAG Pipeline}
-    C -->|Query| D[Chroma Vector Database]
-    D -->|Retrieves Top 30 Chunks| C
-    C -->|Context + Query| E[Google Gemini 1.5 Flash LLM]
-    E -->|Generates Answer| C
-    C -->|Returns Answer & Citations| B
-    B -->|Displays to UI| A
-
-    F[Data Loader] -->|Fetches & Cleans Data| G(Text Splitter)
-    G -->|Generates Chunks| H(HuggingFace Embeddings)
-    H -->|Creates Vectors| D
-    
-    subgraph Data Sources
-        I[GitLab Handbook Repo] -->|Git Clone (Local)| F
-        J[Web Scraper Bypass] -->|Scrapes Direction Pages| F
-    end
-```
+![System Architecture](architecture.png)
 
 ## Prerequisites
 
