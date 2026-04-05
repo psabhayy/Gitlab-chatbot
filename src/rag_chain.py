@@ -1,8 +1,8 @@
 import os
 from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings # Back to the local tool
-from langchain.memory import ConversationSummaryBufferMemory
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.memory import ConversationSummaryBufferMemory  
 from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
 from src.config import EMBEDDING_MODEL_NAME, LLM_MODEL_NAME, GEMINI_API_KEY
@@ -11,7 +11,6 @@ def get_rag_chain():
     if not os.path.exists("vector_db"):
         return None
         
-    # Back to the free local embeddings
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     
     # Load the persisted Chroma vectorstore
