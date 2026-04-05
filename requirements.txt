@@ -1,9 +1,10 @@
 streamlit
-langchain>=0.3.0
+langchain>=1.2.0
 langchain-community
 langchain-chroma
 langchain-google-genai
 langchain-huggingface
+langchain-classic
 chromadb
 google-generativeai
 beautifulsoup4

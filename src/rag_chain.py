@@ -1,10 +1,10 @@
-import os
 from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.memory import ConversationSummaryBufferMemory  
-from langchain.chains import ConversationalRetrievalChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_classic.memory import ConversationSummaryBufferMemory
+from langchain_classic.chains import ConversationalRetrievalChain
+
 from src.config import EMBEDDING_MODEL_NAME, LLM_MODEL_NAME, GEMINI_API_KEY
 
 def get_rag_chain():
